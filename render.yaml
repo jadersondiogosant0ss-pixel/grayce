@@ -1,0 +1,25 @@
+# Render.com Blueprint para deploy automático
+# Bot grayce - HRR Imóveis
+
+services:
+  - type: web
+    name: bot-grayce-hrr-imoveis
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        value: 10000
+      - key: HOST
+        value: 0.0.0.0
+      - key: DEBUG
+        value: false
+      # Adicione suas credenciais no painel do Render:
+      # - ANTHROPIC_API_KEY
+      # - EVOLUTION_API_URL
+      # - EVOLUTION_API_KEY

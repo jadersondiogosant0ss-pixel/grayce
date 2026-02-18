@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  bot-grayce:
+    build: .
+    container_name: bot-grayce-hrr-imoveis
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      # Configurações básicas
+      - PORT=5000
+      - HOST=0.0.0.0
+      - DEBUG=false
+
+      # API de IA (escolha uma)
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - MODEL_NAME=claude-3-5-sonnet-20241022
+      # Ou CREAO
+      # - CREAO_API_KEY=${CREAO_API_KEY}
+      # - CREAO_API_URL=https://api.creao.com/v1/chat
+
+      # WhatsApp - Evolution API (escolha uma opção)
+      - EVOLUTION_API_URL=${EVOLUTION_API_URL:-http://evolution-api:8080}
+      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
+      - EVOLUTION_INSTANCE_NAME=grayce_hrr_imoveis
+
+      # Ou Twilio
+      # - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      # - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      # - TWILIO_WHATSAPP_NUMBER=${TWILIO_WHATSAPP_NUMBER}
+
+      # Informações do bot (já definidas no config)
+      - BOT_NAME=grayce
+      - BOT_PHONE=555195251053
+      - COMPANY_NAME=HRR Imóveis
+      - TEAM_NAME=Team Bear
+      - MANAGER_NAME=Diogo
+
+    volumes:
+      # Persiste logs
+      - ./logs:/app/logs
+      # Permite editar config sem rebuild
+      - ./bot_config_grayce.json:/app/bot_config_grayce.json:ro
+
+    networks:
+      - bot-network
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    labels:
+      - "com.hrrimoveis.bot=grayce"
+      - "com.hrrimoveis.team=bear"
+      - "com.hrrimoveis.version=1.0.0"
+
+  # Evolution API (opcional - se quiser rodar junto)
+  evolution-api:
+    image: atendai/evolution-api:latest
+    container_name: evolution-api-grayce
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_URL=http://localhost:8080
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
+    volumes:
+      - evolution_data:/evolution/instances
+      - evolution_store:/evolution/store
+    networks:
+      - bot-network
+    profiles:
+      - with-evolution  # Só inicia se executar: docker-compose --profile with-evolution up
+
+networks:
+  bot-network:
+    driver: bridge
+
+volumes:
+  evolution_data:
+    driver: local
+  evolution_store:
+    driver: local
